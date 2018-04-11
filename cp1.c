@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 void cp1(const char* original, const char* copy) {
-  char *addr_orig, *addr_copy;
+  char *addr_orig;
   int fdcopy, fdorig, length;
   struct stat statbuf;
   stat(original, &statbuf);
@@ -35,19 +35,10 @@ void cp1(const char* original, const char* copy) {
     close(fdcopy);
     exit(1);
   }
-  addr_copy = mmap(NULL, length, PROT_WRITE, MAP_SHARED, fdcopy, 0);
-  if (addr_copy == MAP_FAILED) {
-    printf("error starting memory for file %s\n", copy);
-    close(fdorig);
-    close(fdcopy);
-    exit(1);
-  }
-  //memcpy(addr_copy, addr_orig, length);
+  //copy content
   write(fdcopy, addr_orig, length);
-  printf("done!\n");
   //free memory mapping spaces
   munmap(addr_orig, length);
-  munmap(addr_copy, length);
   //close files
   close(fdorig);
   close(fdcopy);
