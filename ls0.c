@@ -1,7 +1,8 @@
+#define _POSIX_C_SOURCE 200809L
 #include <dirent.h>
 #include <stdio.h>
 
-void ls0(/* arguments */) {
+void ls0() {
   struct dirent *d;
   DIR *p_dir = opendir(".");
   while ((d = readdir(p_dir)) != NULL)
