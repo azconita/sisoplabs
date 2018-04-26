@@ -4,9 +4,11 @@
 // should be performed
 int exit_shell(char* cmd) {
 
-	// Your code here 
-
-	return 0;
+	if (strncmp(cmd, "exit", 4) == 0) {
+		exit(EXIT_SUCCESS);
+		return true;
+	}
+	return false;
 }
 
 // returns true if "chdir" was performed
@@ -15,18 +17,29 @@ int exit_shell(char* cmd) {
 // 	$ cd (change to HOME)
 // it has to be executed and then return true
 int cd(char* cmd) {
-	
-	// Your code here
-
-	return 0;
+	if (strncmp(cmd, "cd", 2) == 0) {
+		if ((strlen(cmd) > 2) && (cmd[3] != ' ')) {
+			char buf[256];
+			chdir(cmd + 3);
+			getcwd(buf,256);
+			snprintf(promt, sizeof promt, "(%s)", buf);
+		} else {
+			chdir(getenv("HOME"));
+			snprintf(promt, sizeof promt, "(%s)", getenv("HOME"));
+		}
+		return true;
+	}
+	return false;
 }
 
 // returns true if 'pwd' was invoked
 // in the command line
 int pwd(char* cmd) {
-
-	// Your code here
-	
-	return 0;
+	if (strncmp(cmd, "pwd", 3) == 0) {
+		char buf[256];
+		getcwd(buf, 256);
+		printf("%s\n", buf);
+		return true;
+	}
+	return false;
 }
-

@@ -62,7 +62,14 @@ void exec_cmd(struct cmd* cmd) {
 		case EXEC: {
 			// spawns a command
 			struct execcmd *excmd = (struct execcmd*) cmd;
+			for (int i = 0; i < excmd->eargc; i++) {
+				char key[256];
+				char *f = strchr(excmd->eargv[i], '=');
+				strncpy(key,excmd->eargv[i], strcspn(excmd->eargv[i], "=") );
+				setenv(excmd->eargv[i], f+1, 0);
+			}
 			execvp(excmd->argv[0], excmd->argv);
+			//execvpe(excmd->argv[0], excmd->argv, excmd->eargv);
 		}
 		case BACK: {
 			// runs a command in background
