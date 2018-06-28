@@ -31,7 +31,6 @@ static void get_environ_value(char* arg, char* value, int idx) {
 // - 'get_environ_*()' can be useful here
 static void set_environ_vars(char** eargv, int eargc) {
 
-	// Your code here
 }
 
 // opens the file in which the stdin/stdout or
@@ -46,8 +45,9 @@ static void set_environ_vars(char** eargv, int eargc) {
 // 	to make it a readable normal file
 static int open_redir_fd(char* file) {
 
-	// Your code here
-	return -1;
+	// CHEQUEAR ERRORES
+	int fd = open(file, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	return fd;
 }
 
 // executes a command - does not return
@@ -70,33 +70,81 @@ void exec_cmd(struct cmd* cmd) {
 			}
 			execvp(excmd->argv[0], excmd->argv);
 			//execvpe(excmd->argv[0], excmd->argv, excmd->eargv);
+			break;
 		}
+
+		// runs a command in background
 		case BACK: {
-			// runs a command in background
-			//
-			// Your code here
-			printf("Background process are not yet implemented\n");
-			_exit(-1);
+			/*pid_t p;
+			int nstatus = 0;
+			struct backcmd *bkcmd = (struct backcmd*) cmd;
+			struct execcmd *excmd = (struct execcmd*) bkcmd->c;
+			if ((p = fork()) == 0) {
+				for (int i = 0; i < excmd->eargc; i++) {
+					char key[256];
+					char *f = strchr(excmd->eargv[i], '=');
+					strncpy(key,excmd->eargv[i], strcspn(excmd->eargv[i], "=") );
+					setenv(excmd->eargv[i], f+1, 0);
+				}
+				execvp(excmd->argv[0], excmd->argv);
+				//execvpe(excmd->argv[0], excmd->argv, excmd->eargv);
+			}
+			waitpid(p, &nstatus, 0);
+			free_command(cmd);*/
+			struct backcmd *bkcmd = (struct backcmd*) cmd;
+			//struct execcmd *excmd = (struct execcmd*) bkcmd->c;
+			exec_cmd(bkcmd->c);
+
 			break;
 		}
 
 		case REDIR: {
 			// changes the input/output/stderr flow
-			//
-			// Your code here
-			printf("Redirections are not yet implemented\n");
-			_exit(-1);
+			struct execcmd *rdcmd = (struct execcmd*) cmd;
+			if (rdcmd->in_file != NULL) {
+				int infd = open_redir_fd(rdcmd->in_file);
+				dup2(infd, 0);
+				close(infd);
+			}
+			if (rdcmd->out_file != NULL) {
+				int outfd = open_redir_fd(rdcmd->out_file);
+				dup2(outfd, 1);
+				close(outfd);
+			}
+			if (rdcmd->err_file != NULL) {
+				if(strncmp(rdcmd->err_file, "&1", 2) == 0) {
+					dup2(1, 2);
+				} else {
+					int errfd = open_redir_fd(rdcmd->err_file);
+					dup2(errfd, 2);
+					close(errfd);
+				}
+			}
+			execvpe(rdcmd->argv[0], rdcmd->argv, rdcmd->eargv);
 			break;
 		}
 
 		case PIPE: {
 			// pipes two commands
-			//
-			// Your code here
-			printf("Pipes are not yet implemented\n");
-
-			// free the memory allocated
-			// for the pipe tree structure
+			struct pipecmd *ppcmd = (struct pipecmd*) cmd;
+			int pipefd[2];
+			pipe(pipefd);
+			int pid, status = 0;
+			if ((pid = fork()) == 0) {
+				close(pipefd[0]);
+				dup2(pipefd[1], 1);
+				dup2(pipefd[1], 2);
+				close(pipefd[1]);
+				exec_cmd(ppcmd->leftcmd);
+			} else {
+				waitpid(pid, &status, 0);
+				close(pipefd[1]);
+				dup2(pipefd[0],0);
+				close(pipefd[0]);
+				exec_cmd(ppcmd->rightcmd);
+				// free the memory allocated
+				// for the pipe tree structure
+			}
 			free_command(parsed_pipe);
 
 			break;
