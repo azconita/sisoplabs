@@ -96,9 +96,13 @@ static bool parse_environ_var(struct execcmd* c, char* arg) {
 static char* expand_environ_var(char* arg) {
 
 	char* env = NULL;
-	if ((arg[0] == '$') && ((env = getenv(arg + sizeof(char))) != NULL)) {
-		arg = realloc(arg, strlen(env));
-		memcpy(arg, env, strlen(env));
+	if (arg[0] == '$') {
+		if (arg[1] == '?') {
+			sprintf(arg, "%d", (status));
+		}	else if ((env = getenv(arg + sizeof(char))) != NULL) {
+			arg = realloc(arg, strlen(env));
+			memcpy(arg, env, strlen(env));
+		}
 	}
 	return arg;
 }
@@ -180,12 +184,15 @@ static struct cmd* parse_cmd(char* buf_cmd) {
 // looking for the pipe character '|'
 struct cmd* parse_line(char* buf) {
 
-	struct cmd *r, *l;
+	struct cmd *r = NULL, *l = NULL;
 
 	char* right = split_line(buf, '|');
 
+	if (*right != '\0')
+		r = parse_line(right);
+
 	l = parse_cmd(buf);
-	r = parse_cmd(right);
+	//r = parse_cmd(right);
 
 	return pipe_cmd_create(l, r);
 }

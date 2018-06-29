@@ -2,10 +2,23 @@
 
 int status = 0;
 struct cmd* parsed_pipe;
+struct cmd back_cmds[10];
+int back_cmds_idx = 0;
+
+void check_backcmds() {
+	int bkstatus, pid, i;
+	if ((pid=waitpid(-1,&bkstatus,WNOHANG)) > 0) {
+		for (i = 0; i < 10; i++) {
+			if (back_cmds[i].pid == pid)
+				break;
+		}
+		if (i < 10)
+			print_back_finish(&back_cmds[i]);
+	}
+}
 
 // runs the command in 'cmd'
 int run_cmd(char* cmd) {
-
 	pid_t p;
 	struct cmd *parsed;
 
@@ -53,6 +66,8 @@ int run_cmd(char* cmd) {
 	//
 	if (parsed->type == BACK) {
 		print_back_info(parsed);
+		back_cmds[back_cmds_idx] = *parsed;
+		back_cmds_idx = (++back_cmds_idx >= 10) ? 0 : back_cmds_idx;
 	} else {
 		// waits for the process to finish
 		waitpid(p, &status, 0);
@@ -61,5 +76,6 @@ int run_cmd(char* cmd) {
 
 		free_command(parsed);
 	}
+	check_backcmds();
 	return 0;
 }
